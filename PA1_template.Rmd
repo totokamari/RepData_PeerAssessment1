@@ -1,25 +1,92 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+Author: Toto Kamari
+Date: 9/15/2020
 ---
 
+Loading and Preprocessing the Data
+```{r}
+a <- read.csv("./activity.csv")
+```
 
-## Loading and preprocessing the data
+===============================================================
 
+What is the mean total number of steps taken per day?
+Making a histogram of the total number of steps taken each day:
+```{r}
+b <- aggregate(a["steps"], by=list(a$date), sum, na.rm=TRUE)
+hist(b$steps, main = "Total Steps Taken per Day", xlab = "Steps")
+```
 
+Calculating the mean and median of the total number of steps taken per day:
+```{r}
+c <- mean(b$steps)
+d <- median(b$steps)
+```
+The mean number of steps per day is 'r c'
+The median number of steps per day is 'r d'
 
-## What is mean total number of steps taken per day?
+================================================================
 
+What is the average daily activity pattern?
+Making a time series plot of the average number of steps per 5 minute interval
+```{r}
+e <- aggregate(a["steps"], by=list(a$interval), mean, na.rm=TRUE)
+plot(e$Group.1, e$steps, type = "l", main = "Average Steps per 5 minute Intervals",
+     xlab = "5-minute Interval", ylab = "Average Number of Steps")
+```
 
+Finding what 5-minute interval has the maximum number of steps
+```{r}
+f <- e$Group.1[which.max(e$steps)]
+```
+The 5-minute interval that contains the maximum number of steps is 'r f'
 
-## What is the average daily activity pattern?
+=================================================================
 
+Imputing missing values
+Calculating the total number of missing values
+```{r}
+g <- is.na(rowSums(a[,c(1,3)]))
+h <- sum(g)
+```
+The number of NAs is 'r h'
 
+Replacing the NAs with the interval's mean
+```{r}
+colnames(e) <- c("interval", "steps")
+i <- merge(x = a, y = e, by = "interval", suffixes = c("", "Average"))
+j <- i[with(i, order(date)), ]
+j$steps[g] <- j$stepsAverage[g]
+k <- j[,1:3]
+```
 
-## Imputing missing values
+Making a new histogram
+```{r}
+l <- aggregate(k["steps"], by=list(k$date), sum)
+hist(l$steps, main = "Total Steps Taken per Day", xlab = "Steps")
+```
 
+Calculating the new mean and median
+```{r}
+m <- mean(l$steps)
+n <- median(l$steps)
+```
+The new mean number of steps taken per day is 'r m'
+The new median number of steps taken per day is 'r n'
 
+==================================================================
 
-## Are there differences in activity patterns between weekdays and weekends?
+Are there differences in activity patterns between weekdays and weekends?
+Making a panel plot to show averages across weekdays and weekends
+```{r}
+library(plyr)
+library(lattice)
+k$date <- as.POSIXlt(k$date)
+o <- cbind(k, (weekdays(k$date) == "Sunday" | weekdays(k$date) == "Saturday"))
+colnames(o) <- c("interval", "steps", "date", "daytype") 
+p <- ddply(o, c("interval", "daytype"), summarize, outVal = mean(steps))
+p$daytype <- as.factor(p$daytype)
+levels(p$daytype <- c("Weekends", "Weekdays"))
+xyplot(outVal ~ interval | daytype, data = p, type = "l", layout = c(1,2),
+       ylab = "Number of Steps", xlab = "Interval")
+```
