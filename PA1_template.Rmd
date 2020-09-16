@@ -1,6 +1,9 @@
 ---
 Author: Toto Kamari
 Date: 9/15/2020
+output:
+  html_document:
+    df_print: paged
 ---
 
 Loading and Preprocessing the Data
